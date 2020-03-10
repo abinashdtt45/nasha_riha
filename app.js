@@ -6,15 +6,36 @@ var bcrypt = require('bcryptjs')
 shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$@')
 const {mongoose} = require('./connect')
 const {User} = require('./database_schema/user.js')
+
+//jAuthentication PAckages
+var session = require('express-session')
+var cookieParser = require('cookie-parser')
+var passport = require('passport')
+
 var app = express()
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
+app.use(cookieParser())
 app.use(bodyParser.urlencoded({
     extended: true
 }))
+app.use(session({
+  secret: 'asdfasdgfsdghfsddf',
+  resave: false,
+  saveUninitialized: false
+}))
+app.use(passport.initialize());
+app.use(passport.session());
 //All GET requests start here
 app.get('/', (req, res) => {
-    res.render('home')
+	console.log(req.user)
+	console.log(req.isAuthenticated())
+	if(req.isAuthenticated()===true){
+		res.render('profile')
+	}else{
+		res.render('home')
+	}
+    
 })
 app.get('/login', (req, res) => {
     res.render('login')
@@ -74,7 +95,10 @@ app.post('/login', (req, res) => {
         if (user) {
             bcrypt.compare(pass, user.password).then((result) => {
                 if(result===true){
-                	res.redirect('/profile')
+                	const user_id = user.id
+                	req.login(user_id,(err)=>{
+                		res.redirect('/profile')
+                	})
                 	return
                 }else{
                 	alert("Either password or email not matching")
@@ -84,6 +108,15 @@ app.post('/login', (req, res) => {
         }
     })
 })
+
+//Serializing and Deserialising user session
+passport.serializeUser(function(user_id, done) {
+  done(null, user_id);
+});
+
+passport.deserializeUser(function(user_id, done) {
+    done(null, user_id);
+  });
 // App connection to port
 app.listen(5000, () => {
     console.log("Connected to server at port 5000")
