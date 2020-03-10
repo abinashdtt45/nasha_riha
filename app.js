@@ -108,6 +108,11 @@ app.post('/login', (req, res) => {
         }
     })
 })
+app.post('/logout',(req,res)=>{
+	req.logout()
+	req.session.destroy()
+	res.redirect('/')
+})
 
 //Serializing and Deserialising user session
 passport.serializeUser(function(user_id, done) {
